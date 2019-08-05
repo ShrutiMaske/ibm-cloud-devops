@@ -15,6 +15,7 @@
 package com.ibm.devops.dra.steps;
 
 import com.ibm.devops.dra.PublishBuild;
+import com.ibm.devops.dra.PublishDashBuild;
 import com.ibm.devops.dra.Util;
 import hudson.EnvVars;
 import hudson.FilePath;
@@ -53,7 +54,8 @@ public class PublishBuildStepExecution extends AbstractSynchronousNonBlockingSte
         String toolchainName = Util.isNullOrEmpty(step.getToolchainId()) ? envVars.get("IBM_CLOUD_DEVOPS_TOOLCHAIN_ID") : step.getToolchainId();
         String username = envVars.get("IBM_CLOUD_DEVOPS_CREDS_USR");
         String password = envVars.get("IBM_CLOUD_DEVOPS_CREDS_PSW");
-
+        String hostName = Util.isNullOrEmpty(step.getHostName()) ? envVars.get("IBM_DASH_HOSTNAME") : step.getHostName();
+        String serviceName = Util.isNullOrEmpty(step.getServiceName()) ? envVars.get("IBM_DASH_SERVICENAME") : step.getServiceName();
         //check all the required env vars
         if (!Util.allNotNullOrEmpty(orgName, applicationName,toolchainName, username, password)) {
             printStream.println("[IBM Cloud DevOps] Missing environment variables configurations, please specify all required environment variables in the pipeline");
@@ -66,6 +68,10 @@ public class PublishBuildStepExecution extends AbstractSynchronousNonBlockingSte
         String gitRepo = step.getGitRepo();
         String gitBranch = step.getGitBranch();
         String gitCommit = step.getGitCommit();
+        Long duration = step.getDuration();
+        String pull_request_number = step.getPull_request_number();
+        String build_engine = step.getBuild_engine();
+//        Repo details = step.getDetails();
         // optional build number, if user wants to set their own build number
         String buildNumber = step.getBuildNumber();
 
@@ -75,6 +81,7 @@ public class PublishBuildStepExecution extends AbstractSynchronousNonBlockingSte
             printStream.println("[IBM Cloud DevOps] Error: Failed to upload Build Record.");
             return null;
         }
+//     public PublishBuild(String result, String gitRepo, String gitBranch, String gitCommit, String orgName, String applicationName,String userId,String keyName, String toolchainName, String username, String password) {
 
         if (result.equals("SUCCESS") || result.equals("FAIL")) {
             PublishBuild publishBuild = new PublishBuild(
@@ -94,6 +101,27 @@ public class PublishBuildStepExecution extends AbstractSynchronousNonBlockingSte
             publishBuild.perform(build, ws, launcher, listener);
         } else {
             printStream.println("[IBM Cloud DevOps] the \"result\" in the publishBuildRecord should be either \"SUCCESS\" or \"FAIL\"");
+        }
+//  String hostName,String serviceName,String result, String gitRepo, String gitBranch, String gitCommit, String orgName, String applicationName,String userId,String keyName, String toolchainName, String username, String password, Long duration      
+        if (result.equals("SUCCESS") || result.equals("FAIL")) {
+            PublishDashBuild publishDashBuild = new PublishDashBuild(
+            		pull_request_number,
+            		build_engine,
+                    gitRepo,
+                    gitBranch,
+                    gitCommit,
+                    result,
+                    hostName,
+            		serviceName,
+                    username,
+                    password, duration);
+
+            if (!Util.isNullOrEmpty(buildNumber)) {
+                publishDashBuild.setBuildNumber(buildNumber);
+            } 	
+            publishDashBuild.perform(build, ws, launcher, listener);
+        } else {
+            printStream.println("[IBM Dash] the \"result\" in the publishBuildRecord should be either \"SUCCESS\" or \"FAIL\"");
         }
 
         return null;

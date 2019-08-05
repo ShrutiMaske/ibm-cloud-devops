@@ -426,6 +426,28 @@ public class PublishDeploy extends AbstractDevOpsAction implements SimpleBuildSt
 				return FormValidation.okWithMarkup("<b>Connection successful</b>");
 			}
 		}
+		
+		public FormValidation doTestConnection1(@AncestorInPath ItemGroup context,
+				@QueryParameter("credentialsId") final String credentialsId, @QueryParameter("userId") final String userId,@QueryParameter("keyName") final String keyName )
+		 {
+			String targetAPI = chooseTargetAPI(environment);
+			if (!credentialsId.equals(preCredentials) || Util.isNullOrEmpty(bluemixToken)) {
+				preCredentials = credentialsId;
+				try {
+					String newToken = getDashToken(context, credentialsId, targetAPI,userId,keyName);
+					if (Util.isNullOrEmpty(newToken)) {
+						bluemixToken = newToken;
+						return FormValidation.warning("<b>Got empty token</b>");
+					} else {
+						return FormValidation.okWithMarkup("<b>Connection successful</b>");
+					}
+				} catch (Exception e) {
+					return FormValidation.error("Failed to log in to Dash, please check your username/password");
+				}
+			} else {
+				return FormValidation.okWithMarkup("<b>Connection successful</b>");
+			}
+		}
 
 		/**
 		 * Autocompletion for build job name field
@@ -512,7 +534,7 @@ public class PublishDeploy extends AbstractDevOpsAction implements SimpleBuildSt
 		 *         project
 		 */
 		public String getDisplayName() {
-			return "Publish deployment information to IBM Cloud DevOps";
+			return "";
 		}
 
 		@Override

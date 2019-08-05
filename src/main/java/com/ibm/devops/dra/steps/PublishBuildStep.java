@@ -20,6 +20,8 @@ import org.jenkinsci.plugins.workflow.steps.AbstractStepImpl;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 
+import com.ibm.devops.dra.BuildDashInfoModel.Repo;
+
 import javax.annotation.Nonnull;
 
 public class PublishBuildStep extends AbstractStepImpl {
@@ -28,27 +30,48 @@ public class PublishBuildStep extends AbstractStepImpl {
     private String orgName;
     private String credentialsId;
     private String toolchainId;
+    private String hostName;
+    private String serviceName;
 
     // required parameters to support pipeline script
     private String result;
     private String gitRepo;
     private String gitBranch;
     private String gitCommit;
-
+    private Long duration;
+    private String repo_url;
+    private String branch;
+    private String commit;
+    private String pull_request_number;
+    private String build_engine;
+    private Repo details;
     // custom build number, optional
     private String buildNumber;
 
     @DataBoundConstructor
-    public PublishBuildStep(String result, String gitRepo, String gitBranch, String gitCommit) {
+    public PublishBuildStep(String result, String gitRepo, String gitBranch, String gitCommit,Long duration) {
         this.gitRepo = gitRepo;
         this.gitBranch = gitBranch;
         this.gitCommit = gitCommit;
         this.result = result;
+        this.duration = duration;
     }
 
     @DataBoundSetter
     public void setApplicationName(String applicationName) {
         this.applicationName = applicationName;
+    }
+    
+   
+    
+    @DataBoundSetter
+    public void setserviceName(String serviceName) {
+        this.serviceName = serviceName;
+    }
+    
+    @DataBoundSetter
+    public void setHostName(String hostName) {
+        this.hostName = hostName;
     }
 
     @DataBoundSetter
@@ -74,6 +97,14 @@ public class PublishBuildStep extends AbstractStepImpl {
     public String getApplicationName() {
         return applicationName;
     }
+    
+    public String getHostName() {
+        return hostName;
+    }
+    
+    public String getServiceName() {
+        return serviceName;
+    }
 
     public String getOrgName() {
         return orgName;
@@ -94,6 +125,30 @@ public class PublishBuildStep extends AbstractStepImpl {
     public String getGitCommit() {
         return gitCommit;
     }
+    
+    public Long getDuration() {
+        return duration;
+    }
+       
+    public String getRepo_url() {
+        return repo_url;
+    }
+    
+    public String getBranch() {
+        return branch;
+    }
+    
+    public String getCommit() {
+        return commit;
+    }
+    
+    public String getPull_request_number() {
+    	return pull_request_number;
+    }
+    
+    public String getBuild_engine() {
+        return build_engine;
+    }
 
     public String getToolchainId() {
         return toolchainId;
@@ -106,6 +161,11 @@ public class PublishBuildStep extends AbstractStepImpl {
     public String getBuildNumber() {
         return buildNumber;
     }
+    
+    public Repo getDetails() {
+        return details;
+    }
+
 
     @Extension
     public static class DescriptorImpl extends AbstractStepDescriptorImpl {

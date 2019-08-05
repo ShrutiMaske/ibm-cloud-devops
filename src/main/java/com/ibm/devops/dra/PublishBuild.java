@@ -489,7 +489,7 @@ public class PublishBuild extends AbstractDevOpsAction implements SimpleBuildSte
          * @return The text to be displayed when selecting your build in the project
          */
         public String getDisplayName() {
-            return "Publish build information to IBM Cloud DevOps";
+            return "";
         }
 
         @Override

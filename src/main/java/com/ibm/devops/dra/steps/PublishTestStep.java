@@ -29,7 +29,10 @@ public class PublishTestStep extends AbstractStepImpl {
     private String credentialsId;
     private String toolchainId;
     private String environment;
-
+    private String resultType;
+    private String hostName;
+    private String serviceName;
+    
     // required parameters
     private String type;
     private String fileLocation;
@@ -45,6 +48,21 @@ public class PublishTestStep extends AbstractStepImpl {
     @DataBoundSetter
     public void setApplicationName(String applicationName) {
         this.applicationName = applicationName;
+    }
+    
+    @DataBoundSetter
+    public void setResultType(String resultType) {
+        this.resultType = resultType;
+    }
+    
+    @DataBoundSetter
+    public void setHostName(String hostName) {
+        this.hostName = hostName;
+    }
+    
+    @DataBoundSetter
+    public void setServiceName(String serviceName) {
+        this.serviceName = serviceName;
     }
 
     @DataBoundSetter
@@ -71,6 +89,14 @@ public class PublishTestStep extends AbstractStepImpl {
     public void setBuildNumber(String buildNumber) {
         this.buildNumber = buildNumber;
     }
+    
+    public String getHostName() {
+        return hostName;
+    }
+    
+    public String getServiceName() {
+        return serviceName;
+    }
 
     public String getBuildNumber() {
         return buildNumber;
@@ -78,6 +104,10 @@ public class PublishTestStep extends AbstractStepImpl {
 
     public String getApplicationName() {
         return applicationName;
+    }
+    
+    public String getResultType() {
+        return resultType;
     }
 
     public String getOrgName() {

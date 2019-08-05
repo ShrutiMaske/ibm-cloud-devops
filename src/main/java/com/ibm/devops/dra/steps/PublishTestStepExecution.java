@@ -14,6 +14,7 @@
 
 package com.ibm.devops.dra.steps;
 
+import com.ibm.devops.dra.PublishDashTest;
 import com.ibm.devops.dra.PublishTest;
 import com.ibm.devops.dra.Util;
 import hudson.EnvVars;
@@ -53,6 +54,9 @@ public class PublishTestStepExecution extends AbstractSynchronousNonBlockingStep
         String toolchainName = Util.isNullOrEmpty(step.getToolchainId()) ? envVars.get("IBM_CLOUD_DEVOPS_TOOLCHAIN_ID") : step.getToolchainId();
         String username = envVars.get("IBM_CLOUD_DEVOPS_CREDS_USR");
         String password = envVars.get("IBM_CLOUD_DEVOPS_CREDS_PSW");
+        String hostName = Util.isNullOrEmpty(step.getHostName()) ? envVars.get("IBM_DASH_HOSTNAME") : step.getHostName();
+        String serviceName = Util.isNullOrEmpty(step.getServiceName()) ? envVars.get("IBM_DASH_SERVICENAME") : step.getServiceName();
+
 
         //check all the required env vars
         if (!Util.allNotNullOrEmpty(orgName, applicationName,toolchainName, username, password)) {
@@ -63,6 +67,7 @@ public class PublishTestStepExecution extends AbstractSynchronousNonBlockingStep
 
         //check all the required parameters
         String type = step.getType();
+        String resultType = step.getResultType();
         String fileLocation = step.getFileLocation();
         // optional build number, if user wants to set their own build number
         String buildNumber = step.getBuildNumber();
@@ -88,6 +93,27 @@ public class PublishTestStepExecution extends AbstractSynchronousNonBlockingStep
                 publishTest.setBuildNumber(buildNumber);
             }
             publishTest.perform(build, ws, launcher, listener);
+        } else {
+            printStream.println("[IBM Cloud DevOps] the \"type\" in the publishTestResult should be either \"unittest\", \"code\" or \"fvt\"");
+        }
+        
+        if (type.equals("unit") || type.equals("code") || type.equals("fvt")) {
+            PublishDashTest publishDashTest = new PublishDashTest(
+                    type,
+                    resultType,
+                    fileLocation,
+//                    step.getEnvironment(),
+                    orgName,
+                    applicationName,
+                    toolchainName,
+                    username,
+                    password,
+                    hostName,
+                    serviceName);
+            if (!Util.isNullOrEmpty(buildNumber)) {
+                publishDashTest.setBuildNumber(buildNumber);
+            }
+            publishDashTest.perform(build, ws, launcher, listener);
         } else {
             printStream.println("[IBM Cloud DevOps] the \"type\" in the publishTestResult should be either \"unittest\", \"code\" or \"fvt\"");
         }

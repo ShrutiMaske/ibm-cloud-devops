@@ -592,7 +592,7 @@ public class EvaluateGate extends AbstractDevOpsAction implements SimpleBuildSte
          * @return The text to be displayed when selecting your build in the project
          */
         public String getDisplayName() {
-            return "IBM Cloud DevOps Gate";
+            return "";
         }
 
         @Override

@@ -582,7 +582,7 @@ public class PublishSQ extends AbstractDevOpsAction implements SimpleBuildStep {
          * @return The text to be displayed when selecting your build in the project
          */
         public String getDisplayName() {
-            return "Publish SonarQube test result to IBM Cloud DevOps";
+            return "";
         }
 
         @Override

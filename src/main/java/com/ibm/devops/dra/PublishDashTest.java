@@ -59,7 +59,7 @@ import java.util.HashSet;
 /**
  * Authenticate with Bluemix and then upload the result file to DRA
  */
-public class PublishTest extends AbstractDevOpsAction implements SimpleBuildStep {
+public class PublishDashTest extends AbstractDevOpsAction implements SimpleBuildStep {
 
     private final static String API_PART = "/organizations/{org_name}/toolchainids/{toolchain_id}/buildartifacts/{build_artifact}/builds/{build_id}/results_multipart";
     private final static String CONTENT_TYPE_JSON = "application/json";
@@ -67,6 +67,7 @@ public class PublishTest extends AbstractDevOpsAction implements SimpleBuildStep
 
     // form fields from UI
     private final String lifecycleStage;
+    private final String resultType;
     private String contents;
     private String additionalLifecycleStage;
     private String additionalContents;
@@ -79,6 +80,8 @@ public class PublishTest extends AbstractDevOpsAction implements SimpleBuildStep
     private String credentialsId;
     private String policyName;
     private boolean willDisrupt;
+    private String hostName;
+    private String serviceName;
 
     private EnvironmentScope testEnv;
     private String envName;
@@ -89,6 +92,7 @@ public class PublishTest extends AbstractDevOpsAction implements SimpleBuildStep
     private String dlmsUrl;
     private String draUrl;
     private static String bluemixToken;
+    private static String dashToken;
     private static String preCredentials;
 
     //fields to support jenkins pipeline
@@ -96,27 +100,33 @@ public class PublishTest extends AbstractDevOpsAction implements SimpleBuildStep
     private String password;
 
     @DataBoundConstructor
-    public PublishTest(String lifecycleStage,
+    public PublishDashTest(String lifecycleStage,
+    				   String resultType,
                        String contents,
                        String applicationName,
                        String orgName,
                        String toolchainName,
                        String buildJobName,
                        String credentialsId,
+                       String hostName,
+                       String serviceName,
                        OptionalUploadBlock additionalUpload,
                        OptionalBuildInfo additionalBuildInfo,
                        OptionalGate additionalGate,
                        EnvironmentScope testEnv) {
         this.lifecycleStage = lifecycleStage;
+        this.resultType = resultType;
         this.contents = contents;
         this.credentialsId = credentialsId;
         this.applicationName = applicationName;
         this.orgName = orgName;
         this.toolchainName = toolchainName;
         this.buildJobName = buildJobName;
-        this.testEnv = testEnv;
-        this.envName = testEnv.getEnvName();
-        this.isDeploy = testEnv.isDeploy();
+//        this.testEnv = testEnv;
+//        this.envName = testEnv.getEnvName();
+//        this.isDeploy = testEnv.isDeploy();
+        this.hostName = hostName;
+        this.serviceName = serviceName;
 
         if (additionalUpload == null) {
             this.additionalContents = null;
@@ -141,22 +151,28 @@ public class PublishTest extends AbstractDevOpsAction implements SimpleBuildStep
         }
     }
 
-    public PublishTest(String lifecycleStage,
+    public PublishDashTest(String lifecycleStage,
+    		           String resultType,
                        String contents,
-                       String envName,
+//                       String envName,
                        String orgName,
                        String applicationName,
                        String toolchainName,
                        String username,
-                       String password) {
+                       String password,
+                       String hostName,
+                       String serviceName) {
         this.lifecycleStage = lifecycleStage;
+        this.resultType = resultType;
         this.contents = contents;
-        this.envName = envName;
+//        this.envName = envName;
         this.applicationName = applicationName;
         this.orgName = orgName;
         this.toolchainName = toolchainName;
         this.username = username;
         this.password = password;
+        this.hostName = hostName;
+        this.serviceName = serviceName;
     }
 
     public void setBuildNumber(String buildNumber) {
@@ -189,9 +205,21 @@ public class PublishTest extends AbstractDevOpsAction implements SimpleBuildStep
     public String getCredentialsId() {
         return credentialsId;
     }
+    
+    public String getHostName() {
+        return hostName;
+    }
 
+    public String getServiceName() {
+        return serviceName;
+    }
+    
     public String getLifecycleStage() {
         return lifecycleStage;
+    }
+    
+    public String getResultType() {
+        return resultType;
     }
 
     public String getContents() {
@@ -286,6 +314,7 @@ public class PublishTest extends AbstractDevOpsAction implements SimpleBuildStep
 
         // create root dir for storing test result
         root = new File(build.getRootDir(), "DRA_TestResults");
+        printStream.println("Root " + root);
 
         // Get the project name and build id from environment
         EnvVars envVars = build.getEnvironment(listener);
@@ -303,9 +332,11 @@ public class PublishTest extends AbstractDevOpsAction implements SimpleBuildStep
         this.applicationName = envVars.expand(this.applicationName);
         this.toolchainName = envVars.expand(this.toolchainName);
         this.contents = envVars.expand(this.contents);
-        if (this.isDeploy || !Util.isNullOrEmpty(this.envName)) {
-            this.environmentName = envVars.expand(this.envName);
-        }
+        this.hostName = envVars.expand(this.hostName);
+        this.serviceName = envVars.expand(this.serviceName);
+//        if (this.isDeploy || !Util.isNullOrEmpty(this.envName)) {
+//            this.environmentName = envVars.expand(this.envName);
+//        }
 
         String buildNumber, buildUrl;
         // if user does not specify the build number
@@ -326,40 +357,49 @@ public class PublishTest extends AbstractDevOpsAction implements SimpleBuildStep
             buildNumber = envVars.expand(this.buildNumber);
         }
 
-        url = url.replace("{org_name}", URLEncoder.encode(this.orgName, "UTF-8").replaceAll("\\+", "%20"));
-        url = url.replace("{toolchain_id}", URLEncoder.encode(this.toolchainName, "UTF-8").replaceAll("\\+", "%20"));
-        url = url.replace("{build_artifact}", URLEncoder.encode(this.applicationName, "UTF-8").replaceAll("\\+", "%20"));
-        url = url.replace("{build_id}", URLEncoder.encode(buildNumber, "UTF-8").replaceAll("\\+", "%20"));
-        this.dlmsUrl = url;
+//        url = url.replace("{org_name}", URLEncoder.encode(this.orgName, "UTF-8").replaceAll("\\+", "%20"));
+//        url = url.replace("{toolchain_id}", URLEncoder.encode(this.toolchainName, "UTF-8").replaceAll("\\+", "%20"));
+//        url = url.replace("{build_artifact}", URLEncoder.encode(this.applicationName, "UTF-8").replaceAll("\\+", "%20"));
+//        url = url.replace("{build_id}", URLEncoder.encode(buildNumber, "UTF-8").replaceAll("\\+", "%20"));
+//        this.dlmsUrl = url;
 
-        String link = chooseControlCenterUrl(env) + "deploymentrisk?orgName=" + URLEncoder.encode(this.orgName, "UTF-8") + "&toolchainId=" + this.toolchainName;
+//        String link = chooseControlCenterUrl(env) + "deploymentrisk?orgName=" + URLEncoder.encode(this.orgName, "UTF-8") + "&toolchainId=" + this.toolchainName;
 
-        String bluemixToken;
-        // get the Bluemix token
+        url = "https://" + this.hostName + "/api/test/v1/services/{serviceName}/tests/{testType}";
+        url = url.replace("{serviceName}", URLEncoder.encode(this.serviceName, "UTF-8").replaceAll("\\+", "%20"));
+        url = url.replace("{testType}", URLEncoder.encode(this.resultType, "UTF-8").replaceAll("\\+", "%20"));
+
+        String dashToken;
+        // get the Dash token
         try {
             if (Util.isNullOrEmpty(this.credentialsId)) {
-                bluemixToken = getBluemixToken(username, password, targetAPI);
+            	dashToken = getDashToken(username, password, targetAPI);
             } else {
-                bluemixToken = getBluemixToken(build.getParent(), this.credentialsId, targetAPI);
+            	dashToken = getDashToken(build.getParent(), this.credentialsId, targetAPI);
             }
 
-            printStream.println("[IBM Cloud DevOps] Log in successfully, get the Bluemix token");
+            printStream.println("[IBM Cloud DevOps] Log in successfully, get the Dash token");
         } catch (Exception e) {
-            printStream.println("[IBM Cloud DevOps] Username/Password is not correct, fail to authenticate with Bluemix");
+            printStream.println("[IBM Cloud DevOps] Username/Password is not correct, fail to authenticate with Dash");
             printStream.println("[IBM Cloud DevOps]" + e.toString());
             return;
         }
+        
+        printStream.println("Dash token " + dashToken);
+        printStream.println("***************************************************************************");
+
+        printStream.println("WorkSpace content  lifecycleStage" + workspace + contents + lifecycleStage);
 
         // parse the wildcard result files
         try {
-            if(!scanAndUpload(build, workspace, contents, lifecycleStage, bluemixToken)){
+            if(!scanAndUpload(build, workspace, contents, lifecycleStage, dashToken)){
                 // if there is any error when scanning and uploading
                 return;
             }
 
             // check to see if we need to upload additional result file
             if (!Util.isNullOrEmpty(additionalContents) && !Util.isNullOrEmpty(additionalLifecycleStage)) {
-                if(!scanAndUpload(build, workspace, additionalContents, additionalLifecycleStage, bluemixToken)) {
+                if(!scanAndUpload(build, workspace, additionalContents, additionalLifecycleStage, dashToken)) {
                     return;
                 }
             }
@@ -369,7 +409,7 @@ public class PublishTest extends AbstractDevOpsAction implements SimpleBuildStep
             return;
         }
 
-        printStream.println("[IBM Cloud DevOps] Go to Control Center (" + link + ") to check your build status");
+//        printStream.println("[IBM Cloud DevOps] Go to Control Center (" + link + ") to check your build status");
 
         // Gate
         // verify if user chooses advanced option to input customized DRA
@@ -381,7 +421,7 @@ public class PublishTest extends AbstractDevOpsAction implements SimpleBuildStep
 
         // get decision response from DRA
         try {
-            JsonObject decisionJson = getDecisionFromDRA(bluemixToken, buildNumber);
+            JsonObject decisionJson = getDecisionFromDRA(dashToken, buildNumber);
             if (decisionJson == null) {
                 printStream.println("[IBM Cloud DevOps] get empty decision");
                 return;
@@ -443,7 +483,7 @@ public class PublishTest extends AbstractDevOpsAction implements SimpleBuildStep
      * @param bluemixToken - the Bluemix toekn
      * @return false if there is any error when scan and upload the file
      */
-    public boolean scanAndUpload(Run build, FilePath workspace, String path, String lifecycleStage, String bluemixToken) throws Exception {
+    public boolean scanAndUpload(Run build, FilePath workspace, String path, String lifecycleStage, String dashToken) throws Exception {
         boolean errorFlag = true;
         FilePath[] filePaths = null;
 
@@ -459,7 +499,9 @@ public class PublishTest extends AbstractDevOpsAction implements SimpleBuildStep
 
             try {
                 filePaths = workspace.list(path);
+                printStream.println(" filePaths : " + filePaths.toString() + "  " + filePaths.length);
             } catch(InterruptedException ie) {
+                printStream.println(" filePaths : " + filePaths);
                 printStream.println("[IBM Cloud DevOps] catching interrupt" + ie.getMessage());
                 ie.printStackTrace();
                 throw ie;
@@ -476,11 +518,14 @@ public class PublishTest extends AbstractDevOpsAction implements SimpleBuildStep
         } else {
 
             for (FilePath fp : filePaths) {
+                printStream.println(" Fp : " + fp);
 
                 // make sure the file path is for file, and copy to the master build folder
                 if (!fp.isDirectory()) {
                     FilePath resultFileLocation = new FilePath(new File(root, fp.getName()));
                     fp.copyTo(resultFileLocation);
+                    printStream.println(" resultFileLocation : " + resultFileLocation);
+
                 }
 
                 //get timestamp
@@ -491,9 +536,13 @@ public class PublishTest extends AbstractDevOpsAction implements SimpleBuildStep
 
                 String rootUrl = Jenkins.getInstance().getRootUrl();
                 String jobUrl = rootUrl + build.getUrl();
+                
+                printStream.println(" roturl : " + rootUrl);
+                printStream.println(" jobUrl : " + jobUrl);
 
+                
                 // upload the result file to DLMS
-                String res = sendFormToDLMS(bluemixToken, fp, lifecycleStage, jobUrl, timestamp);
+                String res = sendFormToDLMS(dashToken, fp, lifecycleStage, jobUrl, timestamp);
                 if(!printUploadMessage(res, fp.getName())) {
                     errorFlag = false;
                 }
@@ -581,11 +630,17 @@ public class PublishTest extends AbstractDevOpsAction implements SimpleBuildStep
      * @param timestamp
      * @return - response/error message from DLMS
      */
-    public String sendFormToDLMS(String bluemixToken, FilePath contents, String lifecycleStage, String jobUrl, String timestamp) throws IOException {
-
+    public String sendFormToDLMS(String dashToken, FilePath contents, String lifecycleStage, String jobUrl, String timestamp) throws IOException {
+    	
+    	String url = "https://" + this.hostName + "/api/test/v1/services/{serviceName}/tests/{testType}?fileType=" + this.resultType;
+        url = url.replace("{serviceName}", URLEncoder.encode(this.serviceName, "UTF-8").replaceAll("\\+", "%20"));
+        url = url.replace("{testType}", URLEncoder.encode(this.lifecycleStage, "UTF-8").replaceAll("\\+", "%20"));
+        
+        printStream.println("URL  : " + url);
+        
         // create http client and post method
         CloseableHttpClient httpClient = HttpClients.createDefault();
-        HttpPost postMethod = new HttpPost(this.dlmsUrl);
+        HttpPost postMethod = new HttpPost(url);
 
         postMethod = addProxyInformation(postMethod);
         // build up multi-part forms
@@ -596,12 +651,16 @@ public class PublishTest extends AbstractDevOpsAction implements SimpleBuildStep
             File file = new File(root, contents.getName());
             FileBody fileBody = new FileBody(file);
             builder.addPart("contents", fileBody);
+            printStream.println("file NAme1 : " + file.toString() + " " + file.getName());
+            builder.addBinaryBody("uploadfile", file);
+            printStream.println("file NAme2 : " + file.toString() + " " + file.getName());
 
+            
 
             builder.addTextBody("test_artifact", file.getName());
-            if (this.isDeploy) {
-                builder.addTextBody("environment_name", environmentName);
-            }
+//            if (this.isDeploy) {
+//                builder.addTextBody("environment_name", environmentName);
+//            }
             //Todo check the value of lifecycleStage
             builder.addTextBody("lifecycle_stage", lifecycleStage);
             builder.addTextBody("url", jobUrl);
@@ -623,7 +682,7 @@ public class PublishTest extends AbstractDevOpsAction implements SimpleBuildStep
             builder.addTextBody("contents_type", contentType);
             HttpEntity entity = builder.build();
             postMethod.setEntity(entity);
-            postMethod.setHeader("Authorization", bluemixToken);
+            postMethod.setHeader("Authorization", "TOKEN " + dashToken);
         } else {
             return "Error: File is null";
         }
@@ -634,6 +693,10 @@ public class PublishTest extends AbstractDevOpsAction implements SimpleBuildStep
             response = httpClient.execute(postMethod);
             // parse the response json body to display detailed info
             String resStr = EntityUtils.toString(response.getEntity());
+            
+            printStream.println("response for POST call for jekins build : " + resStr);
+            printStream.println("response for POST call for jekins build : " + response);
+
             JsonParser parser = new JsonParser();
             JsonElement element =  parser.parse(resStr);
 
@@ -672,9 +735,9 @@ public class PublishTest extends AbstractDevOpsAction implements SimpleBuildStep
                 "/builds/" + buildId +
                 "/policies/" + URLEncoder.encode(policyName, "UTF-8").replaceAll("\\+", "%20") +
                 "/decisions";
-        if (this.isDeploy) {
-            url = url.concat("?environment_name=" + environmentName);
-        }
+//        if (this.isDeploy) {
+//            url = url.concat("?environment_name=" + environmentName);
+//        }
 
         HttpPost postMethod = new HttpPost(url);
 
@@ -716,8 +779,8 @@ public class PublishTest extends AbstractDevOpsAction implements SimpleBuildStep
     // If your plugin doesn't really define any property on Descriptor,
     // you don't have to do this.
     @Override
-    public PublishTest.PublishTestImpl getDescriptor() {
-        return (PublishTest.PublishTestImpl)super.getDescriptor();
+    public PublishDashTest.PublishTestImpl getDescriptor() {
+        return (PublishDashTest.PublishTestImpl)super.getDescriptor();
     }
 
     /**
@@ -743,7 +806,7 @@ public class PublishTest extends AbstractDevOpsAction implements SimpleBuildStep
          * call load() in the constructor.
          */
         public PublishTestImpl() {
-            super(PublishTest.class);
+            super(PublishDashTest.class);
             load();
         }
 
@@ -802,7 +865,7 @@ public class PublishTest extends AbstractDevOpsAction implements SimpleBuildStep
                 try {
                     String bluemixToken = getBluemixToken(context, credentialsId, targetAPI);
                     if (Util.isNullOrEmpty(bluemixToken)) {
-                        PublishTest.bluemixToken = bluemixToken;
+                        PublishDashTest.bluemixToken = bluemixToken;
                         return FormValidation.warning("<b>Got empty token</b>");
                     } else {
                         return FormValidation.okWithMarkup("<b>Connection successful</b>");
@@ -928,6 +991,10 @@ public class PublishTest extends AbstractDevOpsAction implements SimpleBuildStep
         public ListBoxModel doFillLifecycleStageItems(@QueryParameter("lifecycleStage") final String selection) {
             return fillTestType();
         }
+        
+        public ListBoxModel doFillResultTypeItems(@QueryParameter("resultType") final String selection) {
+            return fillResultType();
+        }
 
         public ListBoxModel doFillAdditionalLifecycleStageItems(@QueryParameter("additionalLifecycleStage") final String selection) {
             return fillTestType();
@@ -940,9 +1007,25 @@ public class PublishTest extends AbstractDevOpsAction implements SimpleBuildStep
         public ListBoxModel fillTestType() {
             ListBoxModel model = new ListBoxModel();
 
-            model.add("Unit Test", "unittest");
+            model.add("Unit Test", "unit");
             model.add("Functional Verification Test", "fvt");
-            model.add("Code Coverage", "code");
+            model.add("Integration Test", "integrationtest");
+            model.add("Security Test", "securitytest");
+            model.add("Performance Test", "performancetest");
+
+            return model;
+        }
+        
+        /**
+         * fill the dropdown list of rule type
+         * @return the dropdown list model
+         */
+        public ListBoxModel fillResultType() {
+            ListBoxModel model = new ListBoxModel();
+
+            model.add("JUnit", "junit");
+            model.add("JMeter", "jmeter");
+            model.add("Pass/Fail", "status");
             return model;
         }
 
@@ -951,7 +1034,7 @@ public class PublishTest extends AbstractDevOpsAction implements SimpleBuildStep
          * @return The text to be displayed when selecting your build in the project
          */
         public String getDisplayName() {
-            return "";
+            return "Publish test result to IBM DevOps Intelligence";
         }
 
         @Override
