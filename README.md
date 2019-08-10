@@ -1,4 +1,4 @@
-# IBM Cloud DevOps
+# IBM Cloud Intelligence
 
 ---
 
