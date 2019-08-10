@@ -1,27 +1,16 @@
 # IBM Cloud DevOps
 
-**Please go to https://wiki.jenkins-ci.org/display/JENKINS/IBM+Cloud+DevOps+Plugin for the latest instructions of this plugin**
-
 ---
 
-With this Jenkins plugin, You can publish test results to DevOps Insights, add automated quality gates, and track your deployment risk.  You can also send your Jenkins job notifications to other tools in your toolchain, such as Slack and PagerDuty. To help you figure out when code was deployed, the system can add deployment messages to your Git commits and your related Git or JIRA issues. You can also view your deployments on the Toolchain Connections page.
+With this Jenkins plugin, You can publish build & test results to DevOps Intelligence.
 
-This plugin provides Post-Build Actions and CLIs to support this inteigration. DevOps Insights aggregates and analyzes the results from unit tests, functional tests, code-coverage tools, static security code scans and dynamic security code scans to determine whether your code meets predefined policies at gates in your deployment process. If your code does not meet or exceed a policy, the deployment is halted, preventing risky changes from being released. You can use DevOps Insights as a safety net for your continuous delivery environment, a way to implement and improve quality standards over time, and a data visualization tool to help you understand your project's health.
+This plugin provides Jenkinsfile and Post-Build Actions to support pipeline & non-pipeline projects respectively.
 
-## 1. Create a toolchain
+## 1. Create a service token in Dash
 
-Before you can integrate DevOps Insights with a Jenkins project, you must create a toolchain. A *toolchain* is a set of tool integrations that support development, deployment, and operations tasks. The collective power of a toolchain is greater than the sum of its individual tool integrations. Toolchains are part of the IBM Bluemix&reg; Continuous Delivery service. To learn more about the Continuous Delivery service, see [its documentation](https://console.ng.bluemix.net/docs/services/ContinuousDelivery/cd_about.html).
+Before you can integrate DevOps Intelligence with a Jenkins project, you must create a service tokens for build & test in dash.
 
-1. To create a toolchain, go to the [Create a Toolchain page](https://console.ng.bluemix.net/devops/create) and follow the instructions on that page.
-
-2. After you create the toolchain, add DevOps Insights to it. For instructions, see the [DevOps Insights documentation](https://console.ng.bluemix.net/docs/services/DevOpsInsights/index.html).
-
-## 2. (optional) Configure Jenkins jobs for Deployment Risk dashboard
-
-If you would like to make use Deployment Risk dashboard, follow these steps.
-
-After the plugin is installed, you can integrate DevOps Insights into your Jenkins project.
-
+1. Add token as credentials in jenkins as username-password
 
 ### General workflow
 
@@ -29,54 +18,23 @@ After the plugin is installed, you can integrate DevOps Insights into your Jenki
 
 2. Add a post-build action for the corresponding type:
 
-   * For build jobs, use **Publish build information to IBM Cloud DevOps**.
+   * For build jobs, use **Publish build information to IBM Cloud Intelligence**.
 
-   * For test jobs, use **Publish test result to IBM Cloud DevOps**.
-
-   * For deployment jobs, use **Publish deployment information to IBM Cloud DevOps**.
+   * For test jobs, use **Publish test result to IBM Cloud Intelligence**.
 
 3. Complete the required fields:
 
-   * From the **Credentials**, select your Bluemix ID and password. If they are not saved in Jenkins, click **Add** to add and save them. Click **Test Connection** to test your connection with Bluemix.
+   * From the **DevOps Intelligence Credentials**, select your service token. If they are not saved in Jenkins, click **Add** to add as username-password and save them. 
 
-   * In the **Build Job Name** field, specify your build job's name exactly as it is in Jenkins. If the build occurs with the test job, leave this field empty. If the build job occurs outside of Jenkins, select the **Builds are being done outside of Jenkins** check box and specify the build number and build URL.
+   * In the **Host Name** field, specify devOps Intelligence hostname.
 
-   * For the environment, if the tests are running in build stage, select only the build environment. If the tests are running in the deployment stage, select the deploy environment and specify the environment name. Two values are supported: `STAGING` and `PRODUCTION`.
+   * Specify Service name in **Service Name** field
 
    * For the **Result File Location** field, specify the result file's location. If the test doesn't generate a result file, leave this field empty. The plugin uploads a default result file that is based on the status of current test job.
 
-   **Example configurations**
-
-   ![Upload Build Information](https://github.com/IBM/ibm-cloud-devops/blob/master/screenshots/Upload-Build-Info.png "Publish Build Information to DRA")
-
-   ![Upload Test Result](https://github.com/IBM/ibm-cloud-devops/blob/master/screenshots/Upload-Test-Result.png "Publish Test Result to DRA")
-
-   ![Upload Deployment Information](https://github.com/IBM/ibm-cloud-devops/blob/master/screenshots/Upload-Deployment-Info.png "Publish Deployment Information to DRA")
-
-4. (Optional): If you want to use DevOps Insights policy gates to control a downstream deploy job, add a post build action, **IBM Cloud DevOps Gate**. Choose a policy and specify the scope of the test results. To allow the policy gates to prevent downstream deployments, select the **Fail the build based on the policy rules** check box. The following image shows an example configuration:
-
-    ![DevOps Insights Gate](https://github.com/IBM/ibm-cloud-devops/blob/master/screenshots/DRA-Gate.png "DevOps Insights Gate")
-
-5. Run your Jenkins Build job.
-
-6. Go to the [IBM Bluemix DevOps](https://console.ng.bluemix.net/devops), select your toolchain and click on DevOps Insights card to view Deployment Risk dashboard.
-
-
-## 3. (Optional) Configure Jenkins jobs to send notifications to tools in your toolchain (e.g., Slack, PagerDuty), and enable traceability
-
-Configure your Jenkins jobs to send notifications to tools integrated to your toolchain (e.g., Slack, PagerDuty),
-and use traceability to track code deployments through tags, labels, and comments in your Git repository (repo).
-
-Both Freestyle projects and Pipeline are supported.
-
-Detailed instructions are available in the [Bluemix Docs](https://console.ng.bluemix.net/docs/services/ContinuousDelivery/toolchains_integrations.html#jenkins).
-
-
-   **Example configurations**
-  * Configuring the IBM_CLOUD_DEVOPS_WEBHOOK_URL for job configurations: ![Set IBM_CLOUD_DEVOPS_WEBHOOK_URL Parameter](https://github.com/IBM/ibm-cloud-devops/blob/master/screenshots/Set-Parameterized-Webhook.png "Set Parameterized WebHook")
-  * Configuring post-build actions for job notifications: ![Post-build Actions for WebHook notification](https://github.com/IBM/ibm-cloud-devops/blob/master/screenshots/PostBuild-WebHookNotification.png "Configure WebHook Notification in Post-build Actions")
-  * Configuring post-build actions to track deployment of code changes: ![Post-build Actions to track deployment of code changes](https://github.com/IBM/ibm-cloud-devops/blob/master/screenshots/track-deployment-of-code-changes.png "Configure WebHook Notification in Post-build Actions")
-
+   * Specify Result type (Junit/ Jmeter/ Pass-Fail). Leave **Result File Location** field blank if result type is Pass-Fail
+   
+   * Specify Test type (unit)
 
 ## License
 
