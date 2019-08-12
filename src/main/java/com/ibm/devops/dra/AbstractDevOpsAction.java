@@ -97,10 +97,10 @@ public abstract class AbstractDevOpsAction extends Recorder {
     );
     
     private static Map<String, String> TARGET_DASH_POST_JENKINS_BUILD_API_MAP = ImmutableMap.of(
-    		"production", "https://local-dash.gravitant.net/api/build/v1/services/{serviceName}/builds",
-            "dev", "https://local-dash.gravitant.net/api/build/v1/services/{serviceName}/builds",
-            "new", "https://local-dash.gravitant.net/api/build/v1/services/{serviceName}/builds",
-            "stage1", "https://local-dash.gravitant.net/api/build/v1/services/{serviceName}/builds"
+    		"production", "https://{hostName}/api/build/v1/services/{serviceName}/builds",
+            "dev", "https://{hostName}/api/build/v1/services/{serviceName}/builds",
+            "new", "https://{hostName}/api/build/v1/services/{serviceName}/builds",
+            "stage1", "https://{hostName}/api/build/v1/services/{serviceName}/builds"
     );
 
     private static Map<String, String> ORGANIZATIONS_URL_MAP = ImmutableMap.of(
@@ -190,13 +190,13 @@ public abstract class AbstractDevOpsAction extends Recorder {
     
     public static String chooseDashTargetAPI(String environment) {
         if (!Util.isNullOrEmpty(environment)) {
-            String target_api = TARGET_DASH_API_MAP.get(environment);
+            String target_api = TARGET_DASH_POST_JENKINS_BUILD_API_MAP.get(environment);
             if (!Util.isNullOrEmpty(target_api)) {
                 return target_api;
             }
         }
 
-        return TARGET_DASH_API_MAP.get("production");
+        return TARGET_DASH_POST_JENKINS_BUILD_API_MAP.get("production");
     }
     
     
@@ -448,44 +448,22 @@ public abstract class AbstractDevOpsAction extends Recorder {
      * @return the bearer token
      */
     public static String getDashToken(Job context, String dashcredentialsId, String targetAPI) throws Exception {
-    	System.out.println("Dash token 2");
-    	byte[] byte1 = new byte[5000];
-    	//String build = Job.BUILD 
-    	//RunWrapper obj = new RunWrapper(context Job, boolean currentBuild);
+    	System.out.println("Dash token 2" + dashcredentialsId + targetAPI);
         try {
             List<StandardUsernamePasswordCredentials> standardCredentials = CredentialsProvider.lookupCredentials(
                     StandardUsernamePasswordCredentials.class,
                     context,
                     ACL.SYSTEM,
                     URIRequirementBuilder.fromUri(targetAPI).build());
-
+            System.out.println("Standard  : " + standardCredentials + standardCredentials.toString());
             StandardUsernamePasswordCredentials credentials =
                     CredentialsMatchers.firstOrNull(standardCredentials, CredentialsMatchers.withId(dashcredentialsId));
             
-            System.out.println("  username : " + credentials.getUsername()  );
-            System.out.println("  password : " + credentials.getPassword()  );   
-            System.out.println("  Credentials : " + credentials );
-            
+           
             if (credentials == null || credentials.getUsername() == null || credentials.getPassword() == null) {
                 throw new Exception("Failed to get Credentials");
             }
             
-            
-            
-//            targetAPI = targetAPI.replace("{userId}", URLEncoder.encode(userId, "UTF-8").replaceAll("\\+", "%20"));
-//            targetAPI = targetAPI.replace("{keyName}", URLEncoder.encode(keyName, "UTF-8").replaceAll("\\+", "%20"));
-////                       
-//            URL url = new URL(targetAPI);
-//            HttpProxyConfiguration configuration = buildProxyConfiguration(url);
-//            System.out.println("Configuration details ::"+ configuration);
-//            CloseableHttpClient httpClient = HttpClients.createDefault();
-//            
-//            HttpPost postMethod = new HttpPost(targetAPI);
-//            postMethod = addProxyInformation(postMethod);
-//            postMethod.setHeader("Authorization", "APIKEY "+ credentials.getPassword());
-//            
-//           CloseableHttpResponse response = httpClient.execute(postMethod);
-//           String token = EntityUtils.toString(response.getEntity(), "UTF-8");
            String token1 = " " + credentials.getPassword();
            System.out.println("Token Response "+ token1);
           return token1;               
@@ -516,8 +494,7 @@ public abstract class AbstractDevOpsAction extends Recorder {
             targetAPI = targetAPI.replace("{userId}", URLEncoder.encode(userId, "UTF-8").replaceAll("\\+", "%20"));
             targetAPI = targetAPI.replace("{keyName}", URLEncoder.encode(keyName, "UTF-8").replaceAll("\\+", "%20"));
                 
-            URL url = new URL(targetAPI);
-            HttpProxyConfiguration configuration = buildProxyConfiguration(url);
+
             CloseableHttpClient httpClient = HttpClients.createDefault();
             
             HttpPost postMethod = new HttpPost(targetAPI);
@@ -536,17 +513,9 @@ public abstract class AbstractDevOpsAction extends Recorder {
     
     public static String getDashToken(String username, String password, String targetAPI) throws MalformedURLException, CloudFoundryException {
         try {
-        	System.out.println("Dash token 1");
-            CloudCredentials cloudCredentials = new CloudCredentials(username, password);
+        	String token = password;
+        	return token;
 
-            URL url = new URL(targetAPI);
-            HttpProxyConfiguration configuration = buildProxyConfiguration(url);
-
-            CloudFoundryClient client = new CloudFoundryClient(cloudCredentials, url, configuration, true);
-            return "bearer " + client.login().toString();
-
-        } catch (MalformedURLException e) {
-            throw e;
         } catch (CloudFoundryException e) {
             throw e;
         }

@@ -59,7 +59,7 @@ public class PublishTestStepExecution extends AbstractSynchronousNonBlockingStep
 
 
         //check all the required env vars
-        if (!Util.allNotNullOrEmpty(orgName, applicationName,toolchainName, username, password)) {
+        if (!Util.allNotNullOrEmpty(username, password)) {
             printStream.println("[IBM Cloud DevOps] Missing environment variables configurations, please specify all required environment variables in the pipeline");
             printStream.println("[IBM Cloud DevOps] Error: Failed to upload Test Result.");
             return null;

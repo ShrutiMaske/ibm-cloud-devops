@@ -57,11 +57,11 @@ public class PublishBuildStepExecution extends AbstractSynchronousNonBlockingSte
         String hostName = Util.isNullOrEmpty(step.getHostName()) ? envVars.get("IBM_DASH_HOSTNAME") : step.getHostName();
         String serviceName = Util.isNullOrEmpty(step.getServiceName()) ? envVars.get("IBM_DASH_SERVICENAME") : step.getServiceName();
         //check all the required env vars
-        if (!Util.allNotNullOrEmpty(orgName, applicationName,toolchainName, username, password)) {
-            printStream.println("[IBM Cloud DevOps] Missing environment variables configurations, please specify all required environment variables in the pipeline");
-            printStream.println("[IBM Cloud DevOps] Error: Failed to upload Build Record.");
-            return null;
-        }
+//        if (!Util.allNotNullOrEmpty(orgName, applicationName,toolchainName, username, password)) {
+//            printStream.println("[IBM Cloud DevOps] Missing environment variables configurations, please specify all required environment variables in the pipeline");
+//            printStream.println("[IBM Cloud DevOps] Error: Failed to upload Build Record.");
+//            return null;
+//        }
 
         //check all the required parameters
         String result = step.getResult();

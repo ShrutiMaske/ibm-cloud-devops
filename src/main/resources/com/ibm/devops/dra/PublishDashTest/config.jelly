@@ -43,17 +43,6 @@
         <f:textbox />
     </f:entry>
 
-    <f:optionalBlock field="additionalUpload" name="additionalUpload" title="Upload another file" checked="${instance.additionalContents != null}">
-        <f:entry title="Additional Type of Metric (Optional)" field="additionalLifecycleStage">
-            <f:select>
-            </f:select>
-        </f:entry>
-
-        <f:entry title="Additional Result File Location (Optional)" field="additionalContents">
-            <f:textbox />
-        </f:entry>
-    </f:optionalBlock>
-
 </j:jelly>
 
 

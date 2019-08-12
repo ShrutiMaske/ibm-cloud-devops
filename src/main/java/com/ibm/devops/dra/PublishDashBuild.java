@@ -57,13 +57,10 @@ import java.net.URL;
 import java.net.URLEncoder;
 
 public class PublishDashBuild   extends AbstractDevOpsAction implements SimpleBuildStep {
-	//extends AbstractDevOpsAction
-//    private String userId;
-//    private String keyName;
+	
     private String hostName;
     private String serviceName;
     private String credentialsId;
-//    private String dashcredentialsId;
 
     private String dashUrl;
     private PrintStream printStream;
@@ -87,9 +84,7 @@ public class PublishDashBuild   extends AbstractDevOpsAction implements SimpleBu
     @DataBoundConstructor
     public PublishDashBuild(String hostName,String serviceName, String credentialsId, OptionalBuildInfo additionalBuildInfo) {
         this.credentialsId = credentialsId;
-//        this.dashcredentialsId = dashcredentialsId;
-//        this.userId = userId;
-//        this.keyName = keyName;
+
         this.hostName = hostName;
         this.serviceName = serviceName;
         if (additionalBuildInfo == null) {
@@ -167,8 +162,6 @@ public class PublishDashBuild   extends AbstractDevOpsAction implements SimpleBu
         printStream = listener.getLogger();
         printPluginVersion(this.getClass().getClassLoader(), printStream);
         
-        Long duration = build.getParent().getLastCompletedBuild().getDuration();
-        String Href = build.getParent().getLastCompletedBuild().getUrl();
         // create root dir for storing test result
         root = new File(build.getRootDir(), "DRA_TestResults");
 
@@ -186,46 +179,40 @@ public class PublishDashBuild   extends AbstractDevOpsAction implements SimpleBu
         this.dashUrl = targetDashAPI;
 
         //expand the variables
-        this.duration = duration;
         this.hostName = envVars.expand(this.hostName);
         this.serviceName = envVars.expand(this.serviceName);
-
+        
+        
+       
         // Check required parameters
-        if (Util.isNullOrEmpty(hostName)) {
+        if (Util.isNullOrEmpty(this.hostName)) {
         	printStream.println("[IBM Cloud DevOps] Missing few required configurations");
             printStream.println("[IBM Cloud DevOps] Error: Failed to upload Build Info.");
             return;
         }
-       
-        printStream.println("***************************************************************************"  );
-        printStream.println("build Final Duration : " + this.duration);
-        System.out.println("HREF : " + build.getParent().getLastCompletedBuild().getUrl());
+     
+
 
         String dashToken;
         // get the Dash token
         try {
             if (Util.isNullOrEmpty(this.credentialsId)) {
-                printStream.println("**********  Ist func ********"  );
           	dashToken = getDashToken(username, password, targetDashAPI);
             } else {
-                printStream.println("**********  2nd func ********"  );
+        	
             	dashToken = getDashToken(build.getParent(), this.credentialsId, targetDashAPI);
-            }    	
+             	
 
             printStream.println("[IBM Dash] Log in successfully, get the Dash token");
-        } catch (Exception e) {
+        }} catch (Exception e) {
             printStream.println("[IBM Dash] Username/Password is not correct, fail to authenticate with Dash");
             printStream.println("[IBM Dash]" + e.toString());
             return;
         }
         printStream.println("Dash token " + dashToken);
-        printStream.println("***************************************************************************");
-        printStream.println("HREF : " + build.getParent().getLastCompletedBuild().getUrl());
         
         String link = chooseDashPOSTJenkinsTargetAPI(env);
         
-        printStream.println("Link " + link);
-
         if (uploadDashBuildInfo(dashToken, build, envVars)) {
            // printStream.println("[IBM Cloud DevOps] Go to Control Center (" + link + ") to check your build status");
             BuildPublisherAction action = new BuildPublisherAction(link);
@@ -269,14 +256,10 @@ public class PublishDashBuild   extends AbstractDevOpsAction implements SimpleBu
 
         try {
             CloseableHttpClient httpClient = HttpClients.createDefault();
-            String env = getDescriptor().getEnvironment();
-            
-            String targetDashJenkinsPOSTAPI = chooseDashPOSTJenkinsTargetAPI(env);
-//            String url = targetDashJenkinsPOSTAPI;
+
             String url = "https://" + this.hostName + "/api/build/v1/services/{serviceName}/builds";
             url = url.replace("{serviceName}", URLEncoder.encode(this.serviceName, "UTF-8").replaceAll("\\+", "%20"));
             
-            System.out.println("**********Final POST url : " + url + " *****************" );
             
             String buildNumber;
             if (Util.isNullOrEmpty(this.buildNumber)) {
@@ -287,8 +270,8 @@ public class PublishDashBuild   extends AbstractDevOpsAction implements SimpleBu
 
             String buildUrl = Jenkins.getInstance().getRootUrl() + build.getUrl();
                                               
-            System.out.println("Duration of build3 : " + build.getDurationString() + "Estimates duration : " + build.getEstimatedDuration() );
-            System.out.println("Duration of build4 : " + build.getDuration() + "more details : " + build.getTimestampString()  );
+            printStream.println("Duration of build3 : " + build.getDurationString() + "Estimates duration : " + build.getEstimatedDuration() );
+            printStream.println("Duration of build4 : " + build.getDuration() + "more details : " + build.getTimestampString()  );
 //            String Href = build.getParent().
           
             String buildStatus;
@@ -307,11 +290,7 @@ public class PublishDashBuild   extends AbstractDevOpsAction implements SimpleBu
            
             Long DurationFinal = build.getParent().getLastCompletedBuild().getDuration();
             Long FinalDuration = DurationFinal * 1000000;
-            System.out.println("Took final duration :" + FinalDuration);
-            
-//            int begin = dashToken.indexOf(":") + 2;
-//            int end =  dashToken.lastIndexOf("}") - 1;
-//            String dashToken1 = dashToken.substring(begin, end);
+            printStream.println("Took final duration :" + FinalDuration);
             
             HttpPost postMethod = new HttpPost(url);
             postMethod = addProxyInformation(postMethod);
@@ -328,18 +307,6 @@ public class PublishDashBuild   extends AbstractDevOpsAction implements SimpleBu
             String BuildEngine = "Jenkins";
             BuildDashInfoModel buildInfo = new BuildDashInfoModel(buildNumber, buildUrl, buildStatus, timestamp, FinalDuration, repo, repoBranch, repoCommit, repoRepoURL, PRNum, BuildEngine);
             
-            System.out.println("Build Final Model : " + buildNumber + "  " + buildUrl + "  " + buildStatus + "  " + timestamp + "  " + DurationFinal + "  " + repo);
-            System.out.println(buildInfo);
-            System.out.println("GetREPO url " + buildInfo.getRepo_url());
-            System.out.println("GetCommit " + buildInfo.getCommit());
-            System.out.println("GetBranch " + buildInfo.getBranch());
-            System.out.println("GetBuildEngine " + buildInfo.getBuild_engine());
-            System.out.println("GetPRnumber " + buildInfo.getPull_request_number());
-            System.out.println("Repo Branch " + repoBranch);
-            System.out.println("Repo Commit " + repoCommit);
-            System.out.println("REPO url " + repoRepoURL);
-            System.out.println("PRNum " + PRNum);
-            System.out.println("Build Engine " + BuildEngine);
             
             String json = gson.toJson(buildInfo);
             StringEntity data = new StringEntity(json);
@@ -347,7 +314,6 @@ public class PublishDashBuild   extends AbstractDevOpsAction implements SimpleBu
             CloseableHttpResponse response = httpClient.execute(postMethod);
             resStr = EntityUtils.toString(response.getEntity());
             
-            printStream.println("response for POST call for jekins build : " + resStr + response);
             
             if (response.getStatusLine().toString().contains("200")) {
                 // get 200 response
@@ -445,91 +411,7 @@ public class PublishDashBuild   extends AbstractDevOpsAction implements SimpleBu
             return FormValidation.validateRequired(value);
         }
         
-        public FormValidation doTestConnection1(@AncestorInPath ItemGroup context,
-                @QueryParameter("credentialsId") final String credentialsId, @QueryParameter("userId") final String userId, @QueryParameter("keyName") final String keyName) {
-        	String targetdashAPI = chooseDashTargetAPI(environment);
 
-                try {
-                    String newToken = getDashToken(context, credentialsId, targetdashAPI, userId, keyName);
-                    dashToken = newToken;
-                    String[] result = newToken.split(":");
-                    System.out.println("^^^^^^^^^^^^^^^^^^^^^^^");
-                    System.out.println("get Items : " + context.getItems());
-                    System.out.println("get Display names : " + context.getDisplayName());
-                    System.out.println("^^^^^^^^^^^^^^^^^^^^^^^");
-
-                    System.out.println("newToken : " + newToken);
-                    
-                    int begin = newToken.indexOf(":") + 2;
-                    int end =  newToken.lastIndexOf("}") - 1;
-                    System.out.println("begin : " + begin);
-                    System.out.println("end : " + end);
-                    newToken = newToken.substring(begin, end);
-                    System.out.println("NEW TOKEN : " + newToken);
-                    if (Util.isNullOrEmpty(newToken)) {
-                        return FormValidation.warning("<b>Got empty token</b>");
-                    } else {
-                        return FormValidation.okWithMarkup("<b>Connection successful with Dash</b>");                        
-                    }
-                } catch (Exception e) {
-                	e.printStackTrace();
-                    return FormValidation.error("Failed to log in to Dash, please check your username/password" + e + dashToken);
-                }
-        }
-        
-        public FormValidation doTestConnection2(@AncestorInPath ItemGroup context,
-                @QueryParameter("credentialsId") final String credentialsId, @QueryParameter("userId") final String userId, @QueryParameter("keyName") final String keyName, @QueryParameter("accountName") final String accountName) {
-        	String targetdashAPI = chooseDashTargetAPI(environment);
-
-                try {
-                    String newToken = getDashToken(context, credentialsId, targetdashAPI, userId, keyName);
-                    dashToken = newToken;
-                    String[] result = newToken.split(":");
-                    System.out.println("^^^^^^^^^^^^^^^^^^^^^^^");
-                    System.out.println("get Items : " + context.getItems());
-                    System.out.println("get Display names : " + context.getDisplayName());
-                    System.out.println("^^^^^^^^^^^^^^^^^^^^^^^");
-
-                    System.out.println("newToken : " + newToken);
-                    
-                    int begin = newToken.indexOf(":") + 2;
-                    int end =  newToken.lastIndexOf("}") - 1;
-                    System.out.println("begin : " + begin);
-                    System.out.println("end : " + end);
-                    newToken = newToken.substring(begin, end);
-                    System.out.println("NEW TOKEN TO ADD ACCOUNT: " + newToken);
-                    JSONObject object = new JSONObject();
-                    try {
-                    	object.put("name", accountName);
-                    	object.put("host", "");
-                    }catch(Exception e) {
-                    	e.printStackTrace();
-                    }
-                    
-                    URL url = new URL("https://local-dash.gravitant.net/api/jenkins/v1/config/account");
-//                    HttpProxyConfiguration configuration = buildProxyConfiguration(url);
-                    CloseableHttpClient httpClient = HttpClients.createDefault();
-                    String message = object.toString();
-                    HttpPost postMethod = new HttpPost("https://local-dash.gravitant.net/api/jenkins/v1/config/account");
-                    postMethod = addProxyInformation(postMethod);
-                    postMethod.setHeader("Authorization", "TOKEN "+ newToken);
-                    postMethod.setEntity(new StringEntity(message, "UTF8"));
-                    
-                   CloseableHttpResponse response = httpClient.execute(postMethod);
-                   String token = EntityUtils.toString(response.getEntity(), "UTF-8");
-                   System.out.println("Token Response for Account addition "+ token);
-                    
-                    if (response.getStatusLine().getStatusCode() != 200) {
-                    	System.out.println("Response : " + response);
-                        return FormValidation.warning("<b>Got error in adding account request</b>");
-                    } else {
-                        return FormValidation.okWithMarkup("<b>Account added successful with Dash</b>");                        
-                    }
-                } catch (Exception e) {
-                	e.printStackTrace();
-                    return FormValidation.error("Failed to add account in Dash, please check your username/password" + e + dashToken);
-                }
-        }
 
         
 

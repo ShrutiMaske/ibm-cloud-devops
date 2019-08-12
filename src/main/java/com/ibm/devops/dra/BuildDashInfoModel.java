@@ -16,10 +16,10 @@ package com.ibm.devops.dra;
 
 public class BuildDashInfoModel {
     private String build_id;
-    private String job_url;
+//    private String job_url;
     private String href;
     private String build_status;
-    private String timestamp;
+//    private String timestamp;
     private String built_at;
     private Repo details;
     private Long duration;
@@ -27,7 +27,7 @@ public class BuildDashInfoModel {
     private String branch;
     private String commit;
     private String pull_request_number;
-    private String build_engine;
+    private String buildengine;
 
     public BuildDashInfoModel(String build_id, String job_url, String status, String timestamp, Long duration, Repo repository, String RepoBranch, String RepoCommit, String RepoURL, String PRNum, String BuildEngine) {
         this.build_id = build_id;
@@ -39,7 +39,7 @@ public class BuildDashInfoModel {
         this.branch = RepoBranch;
         this.commit = RepoCommit;
         this.pull_request_number = PRNum;
-        this.build_engine = BuildEngine;
+        this.buildengine = BuildEngine;
         this.details = repository;
     }
 
@@ -51,16 +51,8 @@ public class BuildDashInfoModel {
     	return duration;
     }
 
-    public String getJob_url() {
-        return job_url;
-    }
-
     public String getStatus() {
         return build_status;
-    }
-
-    public String getTimestamp() {
-        return timestamp;
     }
     
     public String getHref() {
@@ -92,7 +84,7 @@ public class BuildDashInfoModel {
     }
     
     public String getBuild_engine() {
-        return build_engine;
+        return buildengine;
     }
 
     public static class Repo {

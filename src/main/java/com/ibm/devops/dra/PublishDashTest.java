@@ -122,9 +122,7 @@ public class PublishDashTest extends AbstractDevOpsAction implements SimpleBuild
         this.orgName = orgName;
         this.toolchainName = toolchainName;
         this.buildJobName = buildJobName;
-//        this.testEnv = testEnv;
-//        this.envName = testEnv.getEnvName();
-//        this.isDeploy = testEnv.isDeploy();
+
         this.hostName = hostName;
         this.serviceName = serviceName;
 
@@ -334,9 +332,7 @@ public class PublishDashTest extends AbstractDevOpsAction implements SimpleBuild
         this.contents = envVars.expand(this.contents);
         this.hostName = envVars.expand(this.hostName);
         this.serviceName = envVars.expand(this.serviceName);
-//        if (this.isDeploy || !Util.isNullOrEmpty(this.envName)) {
-//            this.environmentName = envVars.expand(this.envName);
-//        }
+
 
         String buildNumber, buildUrl;
         // if user does not specify the build number
@@ -357,13 +353,6 @@ public class PublishDashTest extends AbstractDevOpsAction implements SimpleBuild
             buildNumber = envVars.expand(this.buildNumber);
         }
 
-//        url = url.replace("{org_name}", URLEncoder.encode(this.orgName, "UTF-8").replaceAll("\\+", "%20"));
-//        url = url.replace("{toolchain_id}", URLEncoder.encode(this.toolchainName, "UTF-8").replaceAll("\\+", "%20"));
-//        url = url.replace("{build_artifact}", URLEncoder.encode(this.applicationName, "UTF-8").replaceAll("\\+", "%20"));
-//        url = url.replace("{build_id}", URLEncoder.encode(buildNumber, "UTF-8").replaceAll("\\+", "%20"));
-//        this.dlmsUrl = url;
-
-//        String link = chooseControlCenterUrl(env) + "deploymentrisk?orgName=" + URLEncoder.encode(this.orgName, "UTF-8") + "&toolchainId=" + this.toolchainName;
 
         url = "https://" + this.hostName + "/api/test/v1/services/{serviceName}/tests/{testType}";
         url = url.replace("{serviceName}", URLEncoder.encode(this.serviceName, "UTF-8").replaceAll("\\+", "%20"));
@@ -385,10 +374,8 @@ public class PublishDashTest extends AbstractDevOpsAction implements SimpleBuild
             return;
         }
         
-        printStream.println("Dash token " + dashToken);
+        printStream.println(dashToken);
         printStream.println("***************************************************************************");
-
-        printStream.println("WorkSpace content  lifecycleStage" + workspace + contents + lifecycleStage);
 
         // parse the wildcard result files
         try {
@@ -409,7 +396,6 @@ public class PublishDashTest extends AbstractDevOpsAction implements SimpleBuild
             return;
         }
 
-//        printStream.println("[IBM Cloud DevOps] Go to Control Center (" + link + ") to check your build status");
 
         // Gate
         // verify if user chooses advanced option to input customized DRA
@@ -486,6 +472,7 @@ public class PublishDashTest extends AbstractDevOpsAction implements SimpleBuild
     public boolean scanAndUpload(Run build, FilePath workspace, String path, String lifecycleStage, String dashToken) throws Exception {
         boolean errorFlag = true;
         FilePath[] filePaths = null;
+        printStream.println(" path: " + path);
 
         if (Util.isNullOrEmpty(path)) {
             // if no result file specified, create dummy result based on the build status
@@ -499,9 +486,7 @@ public class PublishDashTest extends AbstractDevOpsAction implements SimpleBuild
 
             try {
                 filePaths = workspace.list(path);
-                printStream.println(" filePaths : " + filePaths.toString() + "  " + filePaths.length);
             } catch(InterruptedException ie) {
-                printStream.println(" filePaths : " + filePaths);
                 printStream.println("[IBM Cloud DevOps] catching interrupt" + ie.getMessage());
                 ie.printStackTrace();
                 throw ie;
@@ -518,13 +503,11 @@ public class PublishDashTest extends AbstractDevOpsAction implements SimpleBuild
         } else {
 
             for (FilePath fp : filePaths) {
-                printStream.println(" Fp : " + fp);
 
                 // make sure the file path is for file, and copy to the master build folder
                 if (!fp.isDirectory()) {
                     FilePath resultFileLocation = new FilePath(new File(root, fp.getName()));
                     fp.copyTo(resultFileLocation);
-                    printStream.println(" resultFileLocation : " + resultFileLocation);
 
                 }
 
@@ -536,10 +519,6 @@ public class PublishDashTest extends AbstractDevOpsAction implements SimpleBuild
 
                 String rootUrl = Jenkins.getInstance().getRootUrl();
                 String jobUrl = rootUrl + build.getUrl();
-                
-                printStream.println(" roturl : " + rootUrl);
-                printStream.println(" jobUrl : " + jobUrl);
-
                 
                 // upload the result file to DLMS
                 String res = sendFormToDLMS(dashToken, fp, lifecycleStage, jobUrl, timestamp);
@@ -610,9 +589,7 @@ public class PublishDashTest extends AbstractDevOpsAction implements SimpleBuild
      * @return true if upload succeed, otherwise return false
      */
     private boolean printUploadMessage(String response, String fileName) {
-        if (response.contains("Error")) {
-            printStream.println("[IBM Cloud DevOps] " + response);
-        } else if (response.contains("200")) {
+        if (response.contains("SUCCESS")) {
             printStream.println("[IBM Cloud DevOps] Upload [" + fileName + "] SUCCESSFUL");
             return true;
         } else {
@@ -632,7 +609,7 @@ public class PublishDashTest extends AbstractDevOpsAction implements SimpleBuild
      */
     public String sendFormToDLMS(String dashToken, FilePath contents, String lifecycleStage, String jobUrl, String timestamp) throws IOException {
     	
-    	String url = "https://" + this.hostName + "/api/test/v1/services/{serviceName}/tests/{testType}?fileType=" + this.resultType;
+    	String url = "https://" + this.hostName + "/api/test/v1/services/{serviceName}/tests/{testType}?fileType=" + this.resultType+"&testEngine=Jenkins";
         url = url.replace("{serviceName}", URLEncoder.encode(this.serviceName, "UTF-8").replaceAll("\\+", "%20"));
         url = url.replace("{testType}", URLEncoder.encode(this.lifecycleStage, "UTF-8").replaceAll("\\+", "%20"));
         
@@ -647,20 +624,13 @@ public class PublishDashTest extends AbstractDevOpsAction implements SimpleBuild
         MultipartEntityBuilder builder = MultipartEntityBuilder.create();
         builder.setMode(HttpMultipartMode.BROWSER_COMPATIBLE);
         if (contents != null) {
-
             File file = new File(root, contents.getName());
             FileBody fileBody = new FileBody(file);
             builder.addPart("contents", fileBody);
-            printStream.println("file NAme1 : " + file.toString() + " " + file.getName());
-            builder.addBinaryBody("uploadfile", file);
-            printStream.println("file NAme2 : " + file.toString() + " " + file.getName());
-
-            
+            builder.addBinaryBody("uploadfile", file);           
 
             builder.addTextBody("test_artifact", file.getName());
-//            if (this.isDeploy) {
-//                builder.addTextBody("environment_name", environmentName);
-//            }
+
             //Todo check the value of lifecycleStage
             builder.addTextBody("lifecycle_stage", lifecycleStage);
             builder.addTextBody("url", jobUrl);
@@ -697,21 +667,8 @@ public class PublishDashTest extends AbstractDevOpsAction implements SimpleBuild
             printStream.println("response for POST call for jekins build : " + resStr);
             printStream.println("response for POST call for jekins build : " + response);
 
-            JsonParser parser = new JsonParser();
-            JsonElement element =  parser.parse(resStr);
 
-            if (!element.isJsonObject()) {
-                // 401 Forbidden
-                return "Error: Upload is Forbidden, please check your org name. Error message: " + element.toString();
-            } else {
-                JsonObject resJson = element.getAsJsonObject();
-                if (resJson != null && resJson.has("status")) {
-                    return String.valueOf(response.getStatusLine()) + "\n" + resJson.get("status");
-                } else {
-                    // other cases
-                    return String.valueOf(response.getStatusLine());
-                }
-            }
+            return "SUCCESS";
         } catch (IOException e) {
             e.printStackTrace();
             throw e;
@@ -735,9 +692,7 @@ public class PublishDashTest extends AbstractDevOpsAction implements SimpleBuild
                 "/builds/" + buildId +
                 "/policies/" + URLEncoder.encode(policyName, "UTF-8").replaceAll("\\+", "%20") +
                 "/decisions";
-//        if (this.isDeploy) {
-//            url = url.concat("?environment_name=" + environmentName);
-//        }
+
 
         HttpPost postMethod = new HttpPost(url);
 
