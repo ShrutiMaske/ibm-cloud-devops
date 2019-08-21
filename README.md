@@ -1,4 +1,4 @@
-# IBM Cloud DevOps
+# IBM DevOps Intelligence
 
 **Please go to https://wiki.jenkins-ci.org/display/JENKINS/IBM+Cloud+DevOps+Plugin for the latest instructions of this plugin**
 
